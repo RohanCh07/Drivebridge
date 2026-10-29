@@ -30,6 +30,8 @@ pub struct Paths {
     pub trash: PathBuf,
     /// rclone bisync's own state.
     pub bisync: PathBuf,
+    /// Held by whichever process is syncing.
+    pub lock: PathBuf,
 }
 
 impl Paths {
@@ -47,6 +49,7 @@ impl Paths {
             db: data.join("state.db"),
             trash: data.join("trash"),
             bisync: data.join("bisync"),
+            lock: data.join("sync.lock"),
         };
         for dir in [&data, &paths.trash, &paths.bisync] {
             fs::create_dir_all(dir)
@@ -89,6 +92,7 @@ pub fn sync_config(paths: &Paths, store: &Store) -> Result<SyncConfig> {
         remote_root: format!("{REMOTE}:{folder}"),
         workdir: paths.bisync.clone(),
         trash: paths.trash.clone(),
+        lock: paths.lock.clone(),
         ignore: IgnoreRules::new(),
         policy: SafetyPolicy::default(),
     })

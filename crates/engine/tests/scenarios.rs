@@ -9,7 +9,7 @@ use std::time::{Duration, SystemTime};
 
 use chrono::Local;
 use drivebridge_core::{IgnoreRules, SafetyPolicy, SyncAction};
-use drivebridge_engine::{sync, trash, Error, Options, Outcome, SyncConfig};
+use drivebridge_engine::{lock, sync, trash, Error, Options, Outcome, SyncConfig};
 use drivebridge_store::Store;
 use tempfile::TempDir;
 
@@ -39,6 +39,7 @@ impl World {
             remote_root: drive.to_string_lossy().into_owned(),
             workdir: dir.path().join("bisync"),
             trash: dir.path().join("trash"),
+            lock: dir.path().join("sync.lock"),
             ignore: IgnoreRules::new(),
             policy: SafetyPolicy::default(),
         };
@@ -251,4 +252,76 @@ fn dry_run_changes_nothing() {
     assert!(violation.is_none());
     assert!(tree(&world.drive).is_empty());
     assert!(world.store.base().unwrap().is_empty());
+}
+
+#[test]
+#[ignore = "needs rclone 1.66+"]
+fn only_one_sync_runs_at_a_time() {
+    let mut world = World::new();
+    write(&world.local, "a.txt", "a", 60);
+
+    let held = lock::try_acquire(&world.config.lock).unwrap();
+    assert!(held.is_some());
+    assert!(matches!(world.sync(), Outcome::Busy));
+    assert!(tree(&world.drive).is_empty());
+
+    drop(held);
+    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+}
+
+#[test]
+#[ignore = "needs rclone 1.66+"]
+fn lock_left_by_a_killed_run_is_cleared() {
+    let mut world = World::synced_files(5);
+    // A killed bisync leaves `<session>.lck` beside its `<session>.path1.lst`.
+    let listing = fs::read_dir(&world.config.workdir)
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .find(|name| name.ends_with(".path1.lst"))
+        .expect("bisync keeps listings");
+    let session = listing.trim_end_matches(".path1.lst");
+    let stale = world.config.workdir.join(format!("{session}.lck"));
+    fs::write(&stale, "left over").unwrap();
+
+    write(&world.local, "f1.txt", "edited after the crash", 0);
+    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let synced = read(&world.drive, "f1.txt");
+    assert_eq!(synced.as_deref(), Some("edited after the crash"));
+}
+
+#[test]
+#[ignore = "needs rclone 1.66+"]
+fn lost_bisync_state_loses_no_files() {
+    let mut world = World::synced_files(10);
+    fs::remove_file(world.local.join("f3.txt")).unwrap();
+    write(&world.local, "f4.txt", "edited while state was lost", 0);
+    fs::remove_dir_all(&world.config.workdir).unwrap();
+
+    // Without its listings bisync can only resync, which never deletes: the file deleted
+    // locally comes back from Drive rather than anything being lost.
+    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    assert_eq!(tree(&world.drive).len(), 10);
+    assert_eq!(tree(&world.local).len(), 10);
+    let edited = read(&world.drive, "f4.txt");
+    assert_eq!(edited.as_deref(), Some("edited while state was lost"));
+}
+
+#[test]
+#[ignore = "needs rclone 1.66+"]
+fn sync_catches_up_after_drive_comes_back() {
+    let mut world = World::synced_files(5);
+    write(&world.local, "f1.txt", "edited offline", 0);
+
+    let drive = world.config.remote_root.clone();
+    let gone = world.dir.path().join("unplugged");
+    world.config.remote_root = gone.to_string_lossy().into_owned();
+    let result = world.try_sync(Options::default());
+    assert!(matches!(result, Err(Error::Offline(_))), "{result:?}");
+
+    world.config.remote_root = drive;
+    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let synced = read(&world.drive, "f1.txt");
+    assert_eq!(synced.as_deref(), Some("edited offline"));
+    assert_eq!(tree(&world.drive).len(), 5);
+    assert_eq!(tree(&world.local).len(), 5);
 }

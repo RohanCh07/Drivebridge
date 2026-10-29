@@ -74,6 +74,11 @@ fn sync_once(config: &SyncConfig, store: &mut Store, paths: &Paths) -> bool {
             eprintln!("synced {changes} change(s)");
         }
         Ok(Outcome::UpToDate | Outcome::Preview { .. }) => {}
+        Ok(Outcome::Busy) => {
+            // `drivebridge sync` is running by hand; it covers this round.
+            eprintln!("another sync is running; skipping this round");
+            return true;
+        }
         Ok(Outcome::Blocked { violation, .. }) => {
             // Waiting on the user, not a failure: retrying sooner would not help.
             eprintln!("sync blocked: {violation}; nothing was changed");

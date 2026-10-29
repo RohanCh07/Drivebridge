@@ -1,11 +1,13 @@
 //! One sync run, shared by the CLI and the daemon: list both sides, plan, check the safety
 //! rules, let rclone bisync carry out the plan, and remember the result.
 
+pub mod lock;
 pub mod secrets;
 pub mod settings;
 pub mod trash;
 
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Local};
@@ -29,6 +31,8 @@ pub enum Error {
     Rclone(#[from] drivebridge_rclone::Error),
     #[error(transparent)]
     Store(#[from] drivebridge_store::Error),
+    #[error("could not use the sync lock")]
+    Lock(#[source] io::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -46,6 +50,8 @@ pub struct SyncConfig {
     pub workdir: PathBuf,
     /// Local files a run deletes or overwrites go to `trash/<run time>/`.
     pub trash: PathBuf,
+    /// Shared by every process that syncs this folder, so only one runs at a time.
+    pub lock: PathBuf,
     pub ignore: IgnoreRules,
     pub policy: SafetyPolicy,
 }
@@ -70,6 +76,8 @@ pub enum Outcome {
         violation: SafetyViolation,
         actions: Vec<SyncAction>,
     },
+    /// Another sync (the daemon, or another `drivebridge sync`) is running.
+    Busy,
     UpToDate,
     Synced {
         actions: Vec<SyncAction>,
@@ -85,6 +93,9 @@ pub fn sync(
     options: Options,
     now: DateTime<Local>,
 ) -> Result<Outcome> {
+    let Some(_lock) = lock::try_acquire(&config.lock).map_err(Error::Lock)? else {
+        return Ok(Outcome::Busy);
+    };
     let rcd = Rcd::start(&config.rclone, &config.env)?;
     let (local, remote) = list_both(rcd.client(), config)?;
     let base = store.base()?;
@@ -126,6 +137,8 @@ pub fn sync(
         force: options.force || small_plan,
         excludes: config.ignore.rclone_excludes(),
     };
+    // We hold the sync lock, so any bisync lock left here is from a run that was killed.
+    remove_stale_bisync_locks(&config.workdir).map_err(Error::Lock)?;
     run.run(&config.rclone, &config.env)?;
 
     let (local, remote) = list_both(rcd.client(), config)?;
@@ -161,6 +174,19 @@ fn has_listings(workdir: &Path) -> bool {
     entries
         .filter_map(|e| e.ok())
         .any(|e| e.file_name().to_string_lossy().ends_with(".path1.lst"))
+}
+
+fn remove_stale_bisync_locks(workdir: &Path) -> io::Result<()> {
+    let Ok(entries) = fs::read_dir(workdir) else {
+        return Ok(());
+    };
+    for entry in entries {
+        let path = entry?.path();
+        if path.extension().is_some_and(|ext| ext == "lck") {
+            fs::remove_file(path)?;
+        }
+    }
+    Ok(())
 }
 
 fn snapshot(items: Vec<ListItem>) -> Snapshot {
@@ -241,6 +267,17 @@ mod tests {
         let base = agreed(&local, &remote);
         let paths: Vec<_> = base.keys().collect();
         assert_eq!(paths, vec![&PathBuf::from("same")]);
+    }
+
+    #[test]
+    fn only_bisync_locks_are_removed() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("local..drive.lck"), "{}").unwrap();
+        fs::write(dir.path().join("local..drive.path1.lst"), "").unwrap();
+        remove_stale_bisync_locks(dir.path()).unwrap();
+        assert!(!dir.path().join("local..drive.lck").exists());
+        assert!(dir.path().join("local..drive.path1.lst").exists());
+        remove_stale_bisync_locks(&dir.path().join("missing")).unwrap();
     }
 
     #[test]

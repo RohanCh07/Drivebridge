@@ -13,6 +13,8 @@ use crate::config::{self, Paths, LAST_SYNC};
 
 /// Exit code when the safety check stops a sync.
 const BLOCKED: u8 = 2;
+/// Exit code when another sync is already running.
+const BUSY: u8 = 3;
 
 #[derive(Args)]
 pub struct SyncArgs {
@@ -70,6 +72,10 @@ fn report(outcome: &Outcome) -> ExitCode {
             eprintln!("Review it with `drivebridge sync --dry-run`.");
             eprintln!("If it is what you want, run `drivebridge sync --force`.");
             ExitCode::from(BLOCKED)
+        }
+        Outcome::Busy => {
+            eprintln!("The background service is syncing right now; try again in a moment.");
+            ExitCode::from(BUSY)
         }
         Outcome::UpToDate => {
             println!("Everything is up to date.");
