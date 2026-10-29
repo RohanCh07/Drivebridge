@@ -36,10 +36,15 @@ impl Bisync {
             "--create-empty-src-dirs".into(),
             "--compare".into(),
             "size,modtime".into(),
+            // On a conflict the newer copy keeps the name and the other is renamed beside it,
+            // keeping its extension: notes.txt + notes.conflict1.txt. Both survive.
             "--conflict-resolve".into(),
-            "none".into(),
+            "newer".into(),
             "--conflict-loser".into(),
             "num".into(),
+            "--conflict-suffix".into(),
+            "conflict".into(),
+            "--suffix-keep-extension".into(),
             "--resilient".into(),
             "--recover".into(),
             "--verbose".into(),
@@ -109,6 +114,7 @@ mod tests {
         assert!(has_pair(&args, "--workdir", "/tmp/work"));
         assert!(has_pair(&args, "--backup-dir1", "/tmp/trash/1"));
         assert!(has_pair(&args, "--exclude", ".git/**"));
+        assert!(has_pair(&args, "--conflict-resolve", "newer"));
         assert!(args.iter().any(|a| a == "--resync"));
         assert!(!args.iter().any(|a| a == "--force"));
     }

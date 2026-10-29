@@ -107,10 +107,6 @@ fn tree(root: &Path) -> Vec<(String, String)> {
     files
 }
 
-fn contents(root: &Path) -> Vec<String> {
-    tree(root).into_iter().map(|(_, content)| content).collect()
-}
-
 #[test]
 #[ignore = "needs rclone 1.66+"]
 fn first_sync_merges_both_sides() {
@@ -141,13 +137,18 @@ fn same_file_edited_on_both_sides_keeps_both() {
     };
     assert_eq!(actions, vec![SyncAction::Conflict("notes.txt".into())]);
 
+    // The newer edit keeps the name; the other sits beside it with its extension intact.
     for side in [&world.local, &world.drive] {
-        let found = contents(side);
-        assert!(found.contains(&"edited on laptop".to_string()), "{found:?}");
-        assert!(
-            found.contains(&"edited on Drive!!".to_string()),
-            "{found:?}"
-        );
+        let files = tree(side);
+        let found: Vec<(&str, &str)> = files
+            .iter()
+            .map(|(path, content)| (path.as_str(), content.as_str()))
+            .collect();
+        let expected = [
+            ("notes.conflict1.txt", "edited on Drive!!"),
+            ("notes.txt", "edited on laptop"),
+        ];
+        assert_eq!(found, expected, "{}", side.display());
     }
 }
 
