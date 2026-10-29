@@ -39,6 +39,26 @@ pub fn list(trash: &Path) -> io::Result<Vec<TrashedFile>> {
     Ok(files)
 }
 
+/// Puts `file` back where it was under `local_root`, and returns that path. Refuses if
+/// something is already there.
+pub fn restore(trash: &Path, local_root: &Path, file: &TrashedFile) -> io::Result<PathBuf> {
+    let from = file.location(trash);
+    let to = local_root.join(&file.path);
+    if to.exists() {
+        let message = format!("{} already exists; move it away first", to.display());
+        return Err(io::Error::new(io::ErrorKind::AlreadyExists, message));
+    }
+    if let Some(parent) = to.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    // A rename fails when the trash is on another filesystem; copy instead.
+    if fs::rename(&from, &to).is_err() {
+        fs::copy(&from, &to)?;
+        fs::remove_file(&from)?;
+    }
+    Ok(to)
+}
+
 /// Permanently removes trash folders older than `days`. Returns how many were removed.
 pub fn prune(trash: &Path, now: NaiveDateTime, days: i64) -> io::Result<usize> {
     let cutoff = now - Duration::days(days);
@@ -115,6 +135,24 @@ mod tests {
         let paths: Vec<_> = files.iter().map(|f| f.path.clone()).collect();
         assert_eq!(paths, vec![PathBuf::from("docs/new.txt"), "old.txt".into()]);
         assert_eq!(files[0].stamp, "2026-10-20_090000");
+    }
+
+    #[test]
+    fn restore_puts_the_file_back_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let (trash, local) = (dir.path().join("trash"), dir.path().join("local"));
+        put(&trash, "2026-10-20_090000", "docs/a.txt");
+
+        let file = list(&trash).unwrap().remove(0);
+        let restored = restore(&trash, &local, &file).unwrap();
+        assert_eq!(restored, local.join("docs/a.txt"));
+        assert_eq!(fs::read_to_string(&restored).unwrap(), "x");
+        assert!(list(&trash).unwrap().is_empty());
+
+        put(&trash, "2026-10-21_090000", "docs/a.txt");
+        let again = list(&trash).unwrap().remove(0);
+        let err = restore(&trash, &local, &again).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::AlreadyExists);
     }
 
     #[test]

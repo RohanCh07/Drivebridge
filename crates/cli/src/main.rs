@@ -9,7 +9,7 @@ use std::process::ExitCode;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use drivebridge_engine::{secrets, settings as config};
+use drivebridge_engine::settings as config;
 use drivebridge_rclone::Rcd;
 
 #[derive(Parser)]

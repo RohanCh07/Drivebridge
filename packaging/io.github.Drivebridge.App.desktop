@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Drivebridge
+Comment=Two-way Google Drive sync
+Exec=drivebridge-gui
+Icon=folder-remote
+Terminal=false
+Categories=Utility;FileTools;Network;
+Keywords=google;drive;sync;cloud;

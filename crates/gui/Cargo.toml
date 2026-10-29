@@ -1,0 +1,19 @@
+[package]
+name = "drivebridge-gui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "drivebridge-gui"
+path = "src/main.rs"
+
+[dependencies]
+adw.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+drivebridge-engine.workspace = true
+drivebridge-store.workspace = true
+gtk.workspace = true
+zbus.workspace = true

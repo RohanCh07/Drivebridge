@@ -1,6 +1,5 @@
 //! `drivebridge restore`: bring back files a sync deleted or overwrote locally.
 
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
@@ -41,24 +40,8 @@ pub fn run(args: RestoreArgs) -> Result<()> {
             wanted.display()
         );
     };
-    let from = file.location(&paths.trash);
-    let to = Path::new(&local_root).join(&file.path);
-    if to.exists() {
-        bail!("{} already exists; move it away first", to.display());
-    }
-    if let Some(parent) = to.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    move_file(&from, &to).with_context(|| format!("could not restore {}", to.display()))?;
+    let to = trash::restore(&paths.trash, Path::new(&local_root), file)
+        .with_context(|| format!("could not restore {}", wanted.display()))?;
     println!("Restored {} (from {}).", to.display(), file.stamp);
     Ok(())
-}
-
-/// Renames, or copies and removes when the trash is on another filesystem.
-fn move_file(from: &Path, to: &Path) -> std::io::Result<()> {
-    if fs::rename(from, to).is_ok() {
-        return Ok(());
-    }
-    fs::copy(from, to)?;
-    fs::remove_file(from)
 }

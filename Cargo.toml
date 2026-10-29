@@ -8,6 +8,7 @@ members = [
     "crates/watcher",
     "crates/daemon",
     "crates/cli",
+    "crates/gui",
 ]
 
 [workspace.package]
@@ -23,11 +24,13 @@ drivebridge-engine = { path = "crates/engine" }
 drivebridge-rclone = { path = "crates/rclone" }
 drivebridge-store = { path = "crates/store" }
 drivebridge-watcher = { path = "crates/watcher" }
+adw = { package = "libadwaita", version = "0.7", features = ["v1_5"] }
 anyhow = "1"
 base64 = "0.22"
 chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
 getrandom = "0.2"
+gtk = { package = "gtk4", version = "0.9", features = ["v4_14"] }
 notify = "6"
 keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
 rusqlite = { version = "0.32", features = ["bundled"] }

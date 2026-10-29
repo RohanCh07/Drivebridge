@@ -6,8 +6,9 @@ Open-source two-way Google Drive sync for Linux: a Rust service with bundled rcl
 
 ## Build
 
-You need Rust (stable, via [rustup](https://rustup.rs)), `pkg-config`, `libdbus-1-dev` (for the
-system keyring) and rclone 1.66 or newer (`curl https://rclone.org/install.sh | sudo bash`).
+You need Rust 1.89+ (via [rustup](https://rustup.rs)), `pkg-config`, `libdbus-1-dev` (for the
+system keyring), `libgtk-4-dev` and `libadwaita-1-dev` (for the desktop app), and rclone 1.66 or
+newer (`curl https://rclone.org/install.sh | sudo bash`).
 
 ```sh
 cargo build
@@ -43,6 +44,17 @@ Safety rules:
 
 Google Docs, Sheets and Slides appear locally as `.desktop` links that open them in the browser.
 They are never uploaded back as copies.
+
+## Desktop app
+
+`drivebridge-gui` walks you through setup on first run (your OAuth client file, the two folders,
+then Google sign-in), and afterwards shows what the background service is doing, with Sync now,
+Pause/Resume and a "Recently removed" list to restore files from.
+
+```sh
+cargo install --path crates/gui --root ~/.local
+cp packaging/io.github.Drivebridge.App.desktop ~/.local/share/applications/
+```
 
 ## Run it in the background
 
@@ -84,6 +96,7 @@ Set `DRIVEBRIDGE_RCLONE=/path/to/rclone` to use a specific rclone binary.
 | `crates/watcher` | Filesystem watcher |
 | `crates/daemon` | `drivebridged` background service |
 | `crates/cli` | `drivebridge` command-line tool |
+| `crates/gui` | `drivebridge-gui` desktop app (GTK4 + libadwaita) |
 | `packaging/` | systemd user unit and distro packaging |
 
 ## License
