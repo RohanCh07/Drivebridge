@@ -5,10 +5,10 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
 use clap::Args;
+use drivebridge_engine::trash;
 use drivebridge_store::Store;
 
 use crate::config::{Paths, LOCAL_ROOT, TRASH_DAYS};
-use crate::trash;
 
 #[derive(Args)]
 pub struct RestoreArgs {

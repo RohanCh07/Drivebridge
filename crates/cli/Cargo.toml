@@ -13,6 +13,7 @@ anyhow.workspace = true
 chrono.workspace = true
 clap.workspace = true
 drivebridge-core.workspace = true
+drivebridge-engine.workspace = true
 drivebridge-rclone.workspace = true
 drivebridge-store.workspace = true
 keyring.workspace = true

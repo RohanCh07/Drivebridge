@@ -4,6 +4,7 @@ members = [
     "crates/core",
     "crates/store",
     "crates/rclone",
+    "crates/engine",
     "crates/watcher",
     "crates/daemon",
     "crates/cli",
@@ -17,6 +18,7 @@ repository = "https://github.com/Rohan708/drivebridge"
 
 [workspace.dependencies]
 drivebridge-core = { path = "crates/core" }
+drivebridge-engine = { path = "crates/engine" }
 drivebridge-rclone = { path = "crates/rclone" }
 drivebridge-store = { path = "crates/store" }
 anyhow = "1"

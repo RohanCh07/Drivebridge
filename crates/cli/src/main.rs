@@ -6,7 +6,6 @@ mod secrets;
 mod setup;
 mod status;
 mod sync;
-mod trash;
 
 use std::process::ExitCode;
 

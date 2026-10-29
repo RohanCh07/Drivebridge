@@ -62,11 +62,11 @@ Set `DRIVEBRIDGE_RCLONE=/path/to/rclone` to use a specific rclone binary.
 | `crates/core` | Sync plan types and safety rules (mass-delete guard) |
 | `crates/store` | Local state database |
 | `crates/rclone` | rclone wrapper |
+| `crates/engine` | One sync run: list, plan, check, bisync, record; scenario tests |
 | `crates/watcher` | Filesystem watcher |
 | `crates/daemon` | `drivebridged` background service |
 | `crates/cli` | `drivebridge` command-line tool |
 | `packaging/` | systemd user unit and distro packaging |
-| `tests/scenarios` | End-to-end sync scenarios |
 
 ## License
 
