@@ -158,7 +158,10 @@ mod tests {
     #[test]
     fn menu_offers_pause_or_resume() {
         let idle = labels(&tray(State::Idle));
-        assert_eq!(idle, ["Up to date", "Sync now", "Pause", "Open Drivebridge"]);
+        assert_eq!(
+            idle,
+            ["Up to date", "Sync now", "Pause", "Open Drivebridge"]
+        );
         assert!(labels(&tray(State::Paused)).contains(&"Resume".to_string()));
     }
 

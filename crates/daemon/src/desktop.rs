@@ -100,7 +100,10 @@ mod tests {
         let paths = (1..=5).map(|i| format!("f{i}.txt")).collect();
         let (summary, body, _) = notification(&Event::Conflicts(paths));
         assert_eq!(summary, "5 files were changed on both sides");
-        assert!(body.ends_with("Files: f1.txt, f2.txt, f3.txt and 2 more."), "{body}");
+        assert!(
+            body.ends_with("Files: f1.txt, f2.txt, f3.txt and 2 more."),
+            "{body}"
+        );
     }
 
     #[test]
