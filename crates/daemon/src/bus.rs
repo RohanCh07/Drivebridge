@@ -13,11 +13,10 @@ use drivebridge_store::Store;
 use zbus::blocking::Connection;
 use zbus::{fdo, interface, SignalContext};
 
-use crate::report::{Event, State, Status};
+use crate::report::{Event, Status};
 
 pub const NAME: &str = "io.github.Drivebridge";
 pub const PATH: &str = "/io/github/Drivebridge";
-pub const INTERFACE: &str = "io.github.Drivebridge1";
 
 /// Why the main loop should wake up.
 #[derive(Debug, PartialEq, Eq)]
@@ -49,7 +48,11 @@ impl Daemon {
     /// a message for people, the last successful sync in Unix seconds (0 if never), and how
     /// many files are in sync.
     fn status(&self) -> fdo::Result<(String, String, i64, u32)> {
-        let status = self.status.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let status = self
+            .status
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
         let store = open_store()?;
         let last_sync = store
             .setting(LAST_SYNC)
@@ -58,7 +61,12 @@ impl Daemon {
             .unwrap_or(0);
         let tracked = store.base().map_err(failed)?.len();
         let tracked = u32::try_from(tracked).unwrap_or(u32::MAX);
-        Ok((status.state.as_str().into(), status.message, last_sync, tracked))
+        Ok((
+            status.state.as_str().into(),
+            status.message,
+            last_sync,
+            tracked,
+        ))
     }
 
     fn sync_now(&self) -> fdo::Result<()> {
@@ -67,9 +75,8 @@ impl Daemon {
 
     fn pause(&self) -> fdo::Result<()> {
         open_store()?.set_setting(PAUSED, "true").map_err(failed)?;
-        let mut status = self.status.lock().unwrap_or_else(|e| e.into_inner());
-        *status = Status::new(State::Paused, "Paused");
-        Ok(())
+        // The main loop sees the setting, sets the status and signals the change.
+        self.wake.send(Wake::SyncNow).map_err(failed)
     }
 
     fn resume(&self) -> fdo::Result<()> {
@@ -139,8 +146,11 @@ impl Bus {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::report::State;
     use std::sync::mpsc;
     use std::time::Duration;
+
+    const INTERFACE: &str = "io.github.Drivebridge1";
 
     #[test]
     #[ignore = "needs a session bus: dbus-run-session -- cargo test -- --include-ignored"]

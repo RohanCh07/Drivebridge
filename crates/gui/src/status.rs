@@ -35,7 +35,9 @@ pub fn show(app: &adw::Application) {
     let bus = Rc::new(daemon::connect().ok());
 
     let (w, b) = (widgets.clone(), bus.clone());
-    widgets.sync_now.connect_clicked(move |_| act(&w, &b, "SyncNow"));
+    widgets
+        .sync_now
+        .connect_clicked(move |_| act(&w, &b, "SyncNow"));
     let (w, b) = (widgets.clone(), bus.clone());
     widgets.pause.connect_clicked(move |button| {
         let resume = button.label().as_deref() == Some("Resume");

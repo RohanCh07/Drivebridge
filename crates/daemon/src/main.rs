@@ -88,7 +88,11 @@ fn run() -> Result<ExitCode> {
             scheduler.finished(Instant::now(), true);
             continue;
         }
-        set_status(&status, bus.as_ref(), Status::new(State::Syncing, "Syncing"));
+        set_status(
+            &status,
+            bus.as_ref(),
+            Status::new(State::Syncing, "Syncing"),
+        );
         let ok = sync_once(&config, &mut store, &paths, &status, bus.as_ref());
         scheduler.finished(Instant::now(), ok);
     }

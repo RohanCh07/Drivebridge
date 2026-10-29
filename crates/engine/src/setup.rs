@@ -28,8 +28,9 @@ pub fn connect(request: SetupRequest) -> Result<PathBuf> {
         !folder.is_empty(),
         "syncing your whole Drive isn't supported yet; pick a Drive folder"
     );
-    let (client_id, client_secret) = drive::parse_client_secret_file(&request.client_secret_json)
-        .context("that file isn't a Google OAuth client (expected a Desktop app client)")?;
+    let (client_id, client_secret) =
+        drive::parse_client_secret_file(&request.client_secret_json)
+            .context("that file isn't a Google OAuth client (expected a Desktop app client)")?;
 
     let local = request.local;
     fs::create_dir_all(&local).with_context(|| format!("could not create {}", local.display()))?;

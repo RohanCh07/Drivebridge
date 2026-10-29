@@ -58,6 +58,14 @@ impl World {
     }
 
     fn try_sync(&mut self, options: Options) -> Result<Outcome, Error> {
+        // Tests run in parallel threads, and a child process another test forks can hold a
+        // copy of our lock file until it execs. Wait that out rather than report Busy.
+        for _ in 0..50 {
+            match sync(&self.config, &mut self.store, options, Local::now()) {
+                Ok(Outcome::Busy) => std::thread::sleep(Duration::from_millis(100)),
+                result => return result,
+            }
+        }
         sync(&self.config, &mut self.store, options, Local::now())
     }
 
@@ -67,7 +75,8 @@ impl World {
         for i in 0..count {
             write(&world.local, &format!("f{i}.txt"), &format!("file {i}"), 60);
         }
-        assert!(matches!(world.sync(), Outcome::Synced { .. }));
+        let outcome = world.sync();
+        assert!(matches!(outcome, Outcome::Synced { .. }), "{outcome:?}");
         assert_eq!(tree(&world.drive).len(), count);
         world
     }
@@ -115,13 +124,15 @@ fn first_sync_merges_both_sides() {
     write(&world.local, "laptop.txt", "from laptop", 60);
     write(&world.drive, "docs/drive.txt", "from drive", 60);
 
-    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let outcome = world.sync();
+    assert!(matches!(outcome, Outcome::Synced { .. }), "{outcome:?}");
     let drive_copy = read(&world.drive, "laptop.txt");
     assert_eq!(drive_copy.as_deref(), Some("from laptop"));
     let local_copy = read(&world.local, "docs/drive.txt");
     assert_eq!(local_copy.as_deref(), Some("from drive"));
 
-    assert!(matches!(world.sync(), Outcome::UpToDate));
+    let second = world.sync();
+    assert!(matches!(second, Outcome::UpToDate), "{second:?}");
 }
 
 #[test]
@@ -164,7 +175,8 @@ fn local_folder_wiped_while_stopped_is_blocked() {
     assert!(matches!(outcome, Outcome::Blocked { .. }), "{outcome:?}");
     assert_eq!(tree(&world.drive).len(), 60);
     // Still blocked next time: nothing was recorded as agreed.
-    assert!(matches!(world.sync(), Outcome::Blocked { .. }));
+    let outcome = world.sync();
+    assert!(matches!(outcome, Outcome::Blocked { .. }), "{outcome:?}");
 }
 
 #[test]
@@ -185,7 +197,8 @@ fn file_deleted_on_drive_goes_to_local_trash() {
     let mut world = World::synced_files(10);
     fs::remove_file(world.drive.join("f3.txt")).unwrap();
 
-    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let outcome = world.sync();
+    assert!(matches!(outcome, Outcome::Synced { .. }), "{outcome:?}");
     assert_eq!(read(&world.local, "f3.txt"), None);
 
     let trashed = trash::list(&world.config.trash).unwrap();
@@ -203,7 +216,8 @@ fn local_delete_removes_file_from_drive() {
     let mut world = World::synced_files(10);
     fs::remove_file(world.local.join("f3.txt")).unwrap();
 
-    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let outcome = world.sync();
+    assert!(matches!(outcome, Outcome::Synced { .. }), "{outcome:?}");
     assert_eq!(read(&world.drive, "f3.txt"), None);
     assert_eq!(tree(&world.drive).len(), 9);
 }
@@ -215,7 +229,8 @@ fn edit_on_drive_survives_local_delete() {
     fs::remove_file(world.local.join("f3.txt")).unwrap();
     write(&world.drive, "f3.txt", "edited on Drive", 0);
 
-    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let outcome = world.sync();
+    assert!(matches!(outcome, Outcome::Synced { .. }), "{outcome:?}");
     let restored = read(&world.local, "f3.txt");
     assert_eq!(restored.as_deref(), Some("edited on Drive"));
 }
@@ -262,11 +277,18 @@ fn only_one_sync_runs_at_a_time() {
 
     let held = lock::try_acquire(&world.config.lock).unwrap();
     assert!(held.is_some());
-    assert!(matches!(world.sync(), Outcome::Busy));
+    let outcome = sync(
+        &world.config,
+        &mut world.store,
+        Options::default(),
+        Local::now(),
+    );
+    assert!(matches!(outcome, Ok(Outcome::Busy)), "{outcome:?}");
     assert!(tree(&world.drive).is_empty());
 
     drop(held);
-    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let outcome = world.sync();
+    assert!(matches!(outcome, Outcome::Synced { .. }), "{outcome:?}");
 }
 
 #[test]
@@ -284,7 +306,8 @@ fn lock_left_by_a_killed_run_is_cleared() {
     fs::write(&stale, "left over").unwrap();
 
     write(&world.local, "f1.txt", "edited after the crash", 0);
-    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let outcome = world.sync();
+    assert!(matches!(outcome, Outcome::Synced { .. }), "{outcome:?}");
     let synced = read(&world.drive, "f1.txt");
     assert_eq!(synced.as_deref(), Some("edited after the crash"));
 }
@@ -299,7 +322,8 @@ fn lost_bisync_state_loses_no_files() {
 
     // Without its listings bisync can only resync, which never deletes: the file deleted
     // locally comes back from Drive rather than anything being lost.
-    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let outcome = world.sync();
+    assert!(matches!(outcome, Outcome::Synced { .. }), "{outcome:?}");
     assert_eq!(tree(&world.drive).len(), 10);
     assert_eq!(tree(&world.local).len(), 10);
     let edited = read(&world.drive, "f4.txt");
@@ -319,7 +343,8 @@ fn sync_catches_up_after_drive_comes_back() {
     assert!(matches!(result, Err(Error::Offline(_))), "{result:?}");
 
     world.config.remote_root = drive;
-    assert!(matches!(world.sync(), Outcome::Synced { .. }));
+    let outcome = world.sync();
+    assert!(matches!(outcome, Outcome::Synced { .. }), "{outcome:?}");
     let synced = read(&world.drive, "f1.txt");
     assert_eq!(synced.as_deref(), Some("edited offline"));
     assert_eq!(tree(&world.drive).len(), 5);

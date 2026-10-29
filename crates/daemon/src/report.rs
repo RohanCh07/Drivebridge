@@ -173,6 +173,9 @@ mod tests {
     fn errors_include_their_causes() {
         let cause = drivebridge_rclone::Error::Transport("connection refused".into());
         let text = describe(&Error::Offline(cause));
-        assert!(text.ends_with("could not reach rclone: connection refused"), "{text}");
+        assert!(
+            text.ends_with("could not reach rclone: connection refused"),
+            "{text}"
+        );
     }
 }
