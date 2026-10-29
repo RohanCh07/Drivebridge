@@ -156,8 +156,11 @@ fn sign_in(form: &Rc<Form>, app: &adw::Application) {
             Ok(Ok(_)) => {
                 // If this fails, the status window says the service isn't running and how
                 // to start it.
-                if let Err(e) = setup::enable_service() {
-                    eprintln!("{e}");
+                // In a Flatpak the status window starts it instead.
+                if !crate::background::in_flatpak() {
+                    if let Err(e) = setup::enable_service() {
+                        eprintln!("{e}");
+                    }
                 }
                 // Open the main window first: closing the last window would quit the app.
                 crate::status::show(&app);

@@ -1,6 +1,7 @@
 //! drivebridge-gui: the desktop app. A setup wizard on first run, then a status window with
 //! controls for the background service and a "Recently removed" list.
 
+mod background;
 mod daemon;
 mod setup;
 mod status;

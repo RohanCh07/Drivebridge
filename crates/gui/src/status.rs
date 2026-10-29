@@ -13,6 +13,7 @@ use drivebridge_store::Store;
 use gtk::glib;
 use zbus::blocking::Connection;
 
+use crate::background;
 use crate::daemon::{self, DaemonStatus};
 
 /// How many removed files the list shows.
@@ -33,6 +34,11 @@ struct Widgets {
 pub fn show(app: &adw::Application) {
     let widgets = Rc::new(build(app));
     let bus = Rc::new(daemon::connect().ok());
+    if let Some(conn) = bus.as_ref() {
+        if background::in_flatpak() {
+            background::ensure_service(conn);
+        }
+    }
 
     let (w, b) = (widgets.clone(), bus.clone());
     widgets

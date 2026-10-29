@@ -57,6 +57,10 @@ sudo apt install ./drivebridge_*.deb
 
 To build it yourself: `cargo install cargo-deb --locked && packaging/build-deb.sh`.
 
+## Flatpak
+
+`packaging/flatpak/` has a manifest (GNOME 46 runtime, rclone bundled) and build steps.
+
 ## Desktop app
 
 `drivebridge-gui` walks you through setup on first run (your OAuth client file, the two folders,

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.Drivebridge.App</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Drivebridge</name>
+  <summary>Two-way Google Drive sync that won't lose your files</summary>
+  <developer id="io.github.rohan708">
+    <name>Rohan Chauhan</name>
+  </developer>
+  <description>
+    <p>
+      Drivebridge keeps a folder on your computer and a folder on Google Drive in sync, in
+      both directions, and is built around not losing data.
+    </p>
+    <ul>
+      <li>Every sync is planned and checked first; a sync that would delete many files stops and asks</li>
+      <li>Files changed on both sides keep both copies</li>
+      <li>Files a sync removes from your computer stay in a trash for 30 days</li>
+      <li>An unreachable Drive is treated as offline, never as "everything was deleted"</li>
+      <li>Google Docs, Sheets and Slides appear as links that open in your browser</li>
+      <li>Signs in with your own Google Cloud OAuth client; the token stays in your keyring</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.Drivebridge.App.desktop</launchable>
+  <url type="homepage">https://github.com/Rohan708/drivebridge</url>
+  <url type="bugtracker">https://github.com/Rohan708/drivebridge/issues</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.0.1" date="2026-10-29">
+      <description>
+        <p>First pre-release.</p>
+      </description>
+    </release>
+  </releases>
+</component>
