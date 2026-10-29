@@ -72,6 +72,8 @@ pub fn enable_service() -> std::result::Result<(), String> {
     if status.success() {
         Ok(())
     } else {
-        Err(format!("systemctl --user enable --now drivebridged.service failed ({status})"))
+        Err(format!(
+            "systemctl --user enable --now drivebridged.service failed ({status})"
+        ))
     }
 }

@@ -5,5 +5,5 @@ Comment=Two-way Google Drive sync
 Exec=drivebridge-gui
 Icon=io.github.Drivebridge.App
 Terminal=false
-Categories=Utility;FileTools;Network;
+Categories=Utility;FileTools;
 Keywords=google;drive;sync;cloud;
