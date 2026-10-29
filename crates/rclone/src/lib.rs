@@ -1,5 +1,8 @@
 //! Client for rclone's remote-control API, and supervision of the `rclone rcd` process.
 
+pub mod bisync;
+pub mod drive;
+
 use std::io;
 use std::net::TcpListener;
 use std::path::Path;
@@ -28,6 +31,8 @@ pub enum Error {
     Transport(String),
     #[error("unexpected response from rclone: {0}")]
     Decode(String),
+    #[error("rclone {command} failed: {status}")]
+    Failed { command: String, status: String },
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -117,6 +122,22 @@ impl RcClient {
         let reply = self.call("operations/list", json!({ "fs": fs, "remote": "" }))?;
         parse_list(reply)
     }
+
+    /// Lists every file (not folder) under `fs`, at any depth.
+    pub fn list_recursive(&self, fs: &str) -> Result<Vec<ListItem>> {
+        let params = json!({
+            "fs": fs,
+            "remote": "",
+            "opt": { "recurse": true, "filesOnly": true, "noMimeType": true },
+        });
+        parse_list(self.call("operations/list", params)?)
+    }
+
+    /// Creates folder `remote` inside `fs`, including parents. Succeeds if it already exists.
+    pub fn mkdir(&self, fs: &str, remote: &str) -> Result<()> {
+        self.call("operations/mkdir", json!({ "fs": fs, "remote": remote }))?;
+        Ok(())
+    }
 }
 
 fn parse_list(reply: Value) -> Result<Vec<ListItem>> {
@@ -133,7 +154,10 @@ pub struct Rcd {
 
 impl Rcd {
     /// Starts `rcd` from the given rclone binary and waits until it answers.
-    pub fn start(rclone: &Path) -> Result<Self> {
+    ///
+    /// `env` is passed to rclone, which is how remotes are defined without a config file
+    /// (see [`drive::DriveCredentials::env`]).
+    pub fn start(rclone: &Path, env: &[(String, String)]) -> Result<Self> {
         let port = free_port().map_err(Error::Spawn)?;
         let user = random_token().map_err(Error::Spawn)?;
         let pass = random_token().map_err(Error::Spawn)?;
@@ -143,6 +167,7 @@ impl Rcd {
             // Credentials go through the environment so they don't show up in `ps`.
             .env("RCLONE_RC_USER", &user)
             .env("RCLONE_RC_PASS", &pass)
+            .envs(env.iter().map(|(k, v)| (k, v)))
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .spawn()

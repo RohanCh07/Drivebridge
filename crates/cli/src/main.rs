@@ -63,7 +63,7 @@ fn ls(target: &str) -> ExitCode {
 }
 
 fn print_listing(rclone: &Path, target: &str) -> drivebridge_rclone::Result<()> {
-    let rcd = Rcd::start(rclone)?;
+    let rcd = Rcd::start(rclone, &[])?;
     eprintln!("using rclone {}", rcd.client().version()?);
     for item in rcd.client().list(target)? {
         if item.is_dir {

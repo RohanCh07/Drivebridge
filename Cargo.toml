@@ -18,9 +18,14 @@ repository = "https://github.com/Rohan708/drivebridge"
 [workspace.dependencies]
 drivebridge-core = { path = "crates/core" }
 drivebridge-rclone = { path = "crates/rclone" }
+drivebridge-store = { path = "crates/store" }
+anyhow = "1"
 base64 = "0.22"
+chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
 getrandom = "0.2"
+keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tempfile = "3"

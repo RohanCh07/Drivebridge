@@ -12,7 +12,7 @@ fn lists_a_local_folder_through_rcd() {
     fs::write(dir.path().join("hello.txt"), "hi").unwrap();
     fs::create_dir(dir.path().join("sub")).unwrap();
 
-    let rcd = Rcd::start(Path::new("rclone")).unwrap();
+    let rcd = Rcd::start(Path::new("rclone"), &[]).unwrap();
     assert!(rcd.client().version().unwrap().starts_with('v'));
 
     let mut entries: Vec<_> = rcd
