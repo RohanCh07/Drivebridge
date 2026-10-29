@@ -16,6 +16,8 @@ drivebridge-core.workspace = true
 drivebridge-engine.workspace = true
 drivebridge-store.workspace = true
 drivebridge-watcher.workspace = true
+ksni.workspace = true
+notify-rust.workspace = true
 zbus.workspace = true
 
 [dev-dependencies]

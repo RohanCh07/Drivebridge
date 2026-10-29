@@ -5,8 +5,10 @@
 //! blocked plan waits for the user. Logs go to stderr, which systemd sends to the journal.
 
 mod bus;
+mod desktop;
 mod report;
 mod schedule;
+mod tray;
 
 use std::path::Path;
 use std::process::ExitCode;
@@ -22,6 +24,7 @@ use drivebridge_engine::{trash, Options, SyncConfig};
 use drivebridge_store::Store;
 
 use crate::bus::{Bus, SharedStatus, Wake};
+use crate::desktop::Desktop;
 use crate::report::{State, Status};
 use crate::schedule::{Schedule, Scheduler};
 
@@ -67,6 +70,9 @@ fn run() -> Result<ExitCode> {
             None
         }
     };
+    // A tray icon needs a desktop session; without one there is nothing to show it in.
+    let tray = bus.as_ref().and_then(|_| tray::spawn(wake.clone()));
+    let desktop = Desktop { bus, tray };
     eprintln!("watching {} <-> {}", root.display(), config.remote_root);
 
     let mut scheduler = Scheduler::new(Schedule::default(), Instant::now());
@@ -84,16 +90,12 @@ fn run() -> Result<ExitCode> {
             continue;
         }
         if settings::is_paused(&store)? {
-            set_status(&status, bus.as_ref(), Status::new(State::Paused, "Paused"));
+            set_status(&status, &desktop, Status::new(State::Paused, "Paused"));
             scheduler.finished(Instant::now(), true);
             continue;
         }
-        set_status(
-            &status,
-            bus.as_ref(),
-            Status::new(State::Syncing, "Syncing"),
-        );
-        let ok = sync_once(&config, &mut store, &paths, &status, bus.as_ref());
+        set_status(&status, &desktop, Status::new(State::Syncing, "Syncing"));
+        let ok = sync_once(&config, &mut store, &paths, &status, &desktop);
         scheduler.finished(Instant::now(), ok);
     }
 }
@@ -104,7 +106,7 @@ fn sync_once(
     store: &mut Store,
     paths: &Paths,
     status: &SharedStatus,
-    bus: Option<&Bus>,
+    desktop: &Desktop,
 ) -> bool {
     let was_blocked = current(status).state == State::Blocked;
     let result = drivebridge_engine::sync(config, store, Options::default(), Local::now());
@@ -123,14 +125,12 @@ fn sync_once(
     }
     // A blocked plan is re-checked every poll; tell the desktop only the first time.
     let still_blocked = was_blocked && report.status.state == State::Blocked;
-    if let Some(bus) = bus.filter(|_| !still_blocked) {
+    if !still_blocked {
         for event in &report.events {
-            if let Err(e) = bus.event(event) {
-                eprintln!("could not signal the desktop: {e}");
-            }
+            desktop.event(event);
         }
     }
-    set_status(status, bus, report.status);
+    set_status(status, desktop, report.status);
     report.ok
 }
 
@@ -138,17 +138,13 @@ fn current(status: &SharedStatus) -> Status {
     status.lock().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
-/// Updates the shared status and signals the desktop if it changed.
-fn set_status(status: &SharedStatus, bus: Option<&Bus>, new: Status) {
+/// Updates the shared status and tells the desktop if it changed.
+fn set_status(status: &SharedStatus, desktop: &Desktop, new: Status) {
     let mut shared = status.lock().unwrap_or_else(|e| e.into_inner());
     if *shared == new {
         return;
     }
     *shared = new.clone();
     drop(shared);
-    if let Some(bus) = bus {
-        if let Err(e) = bus.status_changed(&new) {
-            eprintln!("could not signal the desktop: {e}");
-        }
-    }
+    desktop.status_changed(&new);
 }

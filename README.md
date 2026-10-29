@@ -71,6 +71,10 @@ journalctl --user -u drivebridged -f    # watch what it does
 
 Restart it after running `drivebridge setup` again.
 
+It also shows a tray icon (with Sync now, Pause/Resume and Open Drivebridge) on desktops that
+support one, and a notification when a sync is stopped for safety or a file changed on both
+sides. Set `DRIVEBRIDGE_NO_TRAY=1` to hide the icon.
+
 ## Try the rclone spike
 
 Set up a Drive remote once with `rclone config` (call it `gdrive`), then:
