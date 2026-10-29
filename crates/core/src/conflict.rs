@@ -34,12 +34,18 @@ mod tests {
 
     #[test]
     fn handles_files_without_extension() {
-        assert_eq!(name("Makefile"), PathBuf::from("Makefile (conflict 2026-10-29 laptop)"));
+        assert_eq!(
+            name("Makefile"),
+            PathBuf::from("Makefile (conflict 2026-10-29 laptop)")
+        );
     }
 
     #[test]
     fn handles_dotfiles() {
-        assert_eq!(name(".bashrc"), PathBuf::from(".bashrc (conflict 2026-10-29 laptop)"));
+        assert_eq!(
+            name(".bashrc"),
+            PathBuf::from(".bashrc (conflict 2026-10-29 laptop)")
+        );
     }
 
     #[test]

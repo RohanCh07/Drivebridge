@@ -26,7 +26,10 @@ pub enum SyncAction {
 
 impl SyncAction {
     pub fn is_delete(&self) -> bool {
-        matches!(self, SyncAction::DeleteLocal(_) | SyncAction::DeleteRemote(_))
+        matches!(
+            self,
+            SyncAction::DeleteLocal(_) | SyncAction::DeleteRemote(_)
+        )
     }
 }
 
@@ -137,7 +140,10 @@ mod tests {
     fn blocks_delete_count_over_limit() {
         assert_eq!(
             check_plan(&deletes(51), 10_000),
-            Err(SafetyViolation::TooManyDeletes { count: 51, limit: 50 })
+            Err(SafetyViolation::TooManyDeletes {
+                count: 51,
+                limit: 50
+            })
         );
     }
 

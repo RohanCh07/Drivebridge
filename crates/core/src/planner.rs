@@ -226,7 +226,12 @@ mod tests {
     #[test]
     fn ignored_paths_are_left_out() {
         let local = snap(&[(".git/HEAD", meta(1, 1)), ("a.txt", meta(1, 1))]);
-        let actions = plan(&local, &Snapshot::new(), &Snapshot::new(), &IgnoreRules::new());
+        let actions = plan(
+            &local,
+            &Snapshot::new(),
+            &Snapshot::new(),
+            &IgnoreRules::new(),
+        );
         assert_eq!(actions, vec![SyncAction::Upload("a.txt".into())]);
     }
 }

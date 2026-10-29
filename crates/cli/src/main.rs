@@ -7,7 +7,11 @@ use clap::{Parser, Subcommand};
 use drivebridge_rclone::Rcd;
 
 #[derive(Parser)]
-#[command(name = "drivebridge", version, about = "Two-way Google Drive sync for Linux")]
+#[command(
+    name = "drivebridge",
+    version,
+    about = "Two-way Google Drive sync for Linux"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,

@@ -26,7 +26,10 @@ impl DriveCredentials {
             (format!("{prefix}_TYPE"), "drive".to_string()),
             (format!("{prefix}_SCOPE"), "drive".to_string()),
             (format!("{prefix}_CLIENT_ID"), self.client_id.clone()),
-            (format!("{prefix}_CLIENT_SECRET"), self.client_secret.clone()),
+            (
+                format!("{prefix}_CLIENT_SECRET"),
+                self.client_secret.clone(),
+            ),
             (format!("{prefix}_TOKEN"), self.token.clone()),
             // Google Docs are handled separately (link files, Phase 2), never synced as copies.
             ("RCLONE_DRIVE_SKIP_GDOCS".to_string(), "true".to_string()),
@@ -88,7 +91,10 @@ mod tests {
 
     #[test]
     fn rejects_unrelated_json() {
-        assert_eq!(parse_client_secret_file(r#"{"type":"service_account"}"#), None);
+        assert_eq!(
+            parse_client_secret_file(r#"{"type":"service_account"}"#),
+            None
+        );
         assert_eq!(parse_client_secret_file("not json"), None);
     }
 

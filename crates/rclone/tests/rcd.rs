@@ -23,5 +23,8 @@ fn lists_a_local_folder_through_rcd() {
         .map(|item| (item.name, item.is_dir))
         .collect();
     entries.sort();
-    assert_eq!(entries, vec![("hello.txt".to_string(), false), ("sub".to_string(), true)]);
+    assert_eq!(
+        entries,
+        vec![("hello.txt".to_string(), false), ("sub".to_string(), true)]
+    );
 }

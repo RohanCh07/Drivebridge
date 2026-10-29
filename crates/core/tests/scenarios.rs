@@ -50,7 +50,10 @@ fn local_folder_deleted_while_daemon_stopped_is_blocked() {
         .all(|a| matches!(a, SyncAction::DeleteRemote(_))));
     assert_eq!(
         check_plan(&actions, base.len()),
-        Err(SafetyViolation::TooManyDeletes { count: 500, limit: 50 })
+        Err(SafetyViolation::TooManyDeletes {
+            count: 500,
+            limit: 50
+        })
     );
 }
 

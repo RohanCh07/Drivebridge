@@ -91,9 +91,7 @@ impl RcClient {
             .set("Authorization", &self.auth)
             .send_json(params);
         match reply {
-            Ok(resp) => resp
-                .into_json()
-                .map_err(|e| Error::Decode(e.to_string())),
+            Ok(resp) => resp.into_json().map_err(|e| Error::Decode(e.to_string())),
             Err(ureq::Error::Status(code, resp)) => {
                 let message = resp
                     .into_json::<RcErrorBody>()
