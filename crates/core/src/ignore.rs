@@ -33,6 +33,19 @@ impl IgnoreRules {
                 || self.names.iter().any(|n| n == name)
         })
     }
+
+    /// The same rules as rclone `--exclude` patterns, so rclone skips what the planner skips.
+    pub fn rclone_excludes(&self) -> Vec<String> {
+        let user = self.names.iter().map(String::as_str);
+        let mut patterns = Vec::new();
+        for name in IGNORED_NAMES.iter().copied().chain(user) {
+            patterns.push(format!("{name}/**"));
+            patterns.push(name.to_string());
+        }
+        patterns.extend(TEMP_SUFFIXES.iter().map(|s| format!("*{s}")));
+        patterns.extend(TEMP_PREFIXES.iter().map(|p| format!("{p}*")));
+        patterns
+    }
 }
 
 #[cfg(test)]
@@ -62,6 +75,14 @@ mod tests {
         assert!(!ignored("docs/report.pdf"));
         assert!(!ignored("git-notes.md"));
         assert!(!ignored(".bashrc"));
+    }
+
+    #[test]
+    fn rclone_patterns_cover_folders_and_temp_files() {
+        let patterns = IgnoreRules::new().with_name("build").rclone_excludes();
+        for expected in [".git/**", "node_modules/**", "build/**", "*.swp", ".~lock.*"] {
+            assert!(patterns.iter().any(|p| p == expected), "{expected}");
+        }
     }
 
     #[test]

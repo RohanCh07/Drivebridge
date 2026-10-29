@@ -6,13 +6,40 @@ Open-source two-way Google Drive sync for Linux: a Rust service with bundled rcl
 
 ## Build
 
-You need Rust (stable, via [rustup](https://rustup.rs)), plus `pkg-config` and `libsecret-1-dev`.
+You need Rust (stable, via [rustup](https://rustup.rs)), `pkg-config`, `libdbus-1-dev` (for the
+system keyring) and rclone 1.66 or newer (`curl https://rclone.org/install.sh | sudo bash`).
 
 ```sh
 cargo build
 cargo test                        # unit and scenario tests
 cargo test -- --include-ignored   # also starts a real rclone (needs rclone on PATH)
 ```
+
+## Use it
+
+You need your own Google OAuth client: create a project in Google Cloud Console, enable the
+Drive API, and create an OAuth client of type **Desktop app**. Download its JSON file.
+
+```sh
+drivebridge setup --client-secret ~/Downloads/client_secret_XXXX.json
+drivebridge sync --dry-run   # preview
+drivebridge sync
+drivebridge status
+drivebridge restore          # list files removed or overwritten locally
+drivebridge restore notes/todo.txt
+```
+
+By default `~/GoogleDrive` syncs with a Drive folder named `Drivebridge`; change them with
+`--local` and `--drive-folder`. Your Google token is kept in the system keyring, never in a file.
+
+Safety rules:
+
+- Every sync is planned first. If it would delete more than 50 files or 10% of your files, it
+  stops and changes nothing; use `--force` once you've checked the plan.
+- If Drive can't be listed, the sync stops. An unreachable Drive is never read as "everything
+  was deleted".
+- Local files that a sync deletes or overwrites go to a trash folder for 30 days
+  (`drivebridge restore`). Files deleted on Drive go to Drive's own trash.
 
 ## Try the rclone spike
 

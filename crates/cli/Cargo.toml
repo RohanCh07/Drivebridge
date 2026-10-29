@@ -9,5 +9,14 @@ name = "drivebridge"
 path = "src/main.rs"
 
 [dependencies]
+anyhow.workspace = true
+chrono.workspace = true
 clap.workspace = true
+drivebridge-core.workspace = true
 drivebridge-rclone.workspace = true
+drivebridge-store.workspace = true
+keyring.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

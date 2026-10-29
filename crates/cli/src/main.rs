@@ -1,8 +1,16 @@
 //! drivebridge: command-line control for the sync service.
 
-use std::path::{Path, PathBuf};
+mod config;
+mod restore;
+mod secrets;
+mod setup;
+mod status;
+mod sync;
+mod trash;
+
 use std::process::ExitCode;
 
+use anyhow::Result;
 use clap::{Parser, Subcommand};
 use drivebridge_rclone::Rcd;
 
@@ -20,17 +28,17 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     /// Connect a Google account and choose folders to sync
-    Setup,
+    Setup(setup::SetupArgs),
     /// Run a sync now
-    Sync,
-    /// Show sync status
+    Sync(sync::SyncArgs),
+    /// Show sync status and recent changes
     Status,
     /// Pause syncing
     Pause,
     /// Resume syncing
     Resume,
-    /// Restore a deleted or overwritten file
-    Restore,
+    /// Restore a file that a sync deleted or overwrote locally
+    Restore(restore::RestoreArgs),
     /// List a folder through rclone, e.g. `drivebridge ls gdrive:Documents`
     Ls {
         /// An rclone path: a configured remote like `gdrive:Folder`, or a local folder
@@ -39,35 +47,30 @@ enum Command {
 }
 
 fn main() -> ExitCode {
-    let name = match Cli::parse().command {
-        Command::Ls { target } => return ls(&target),
-        Command::Setup => "setup",
-        Command::Sync => "sync",
-        Command::Status => "status",
-        Command::Pause => "pause",
-        Command::Resume => "resume",
-        Command::Restore => "restore",
-    };
-    println!("drivebridge {name}: not implemented yet");
-    ExitCode::SUCCESS
-}
-
-fn ls(target: &str) -> ExitCode {
-    // Lets you point at a bundled or newer rclone instead of the one on PATH.
-    let rclone = std::env::var_os("DRIVEBRIDGE_RCLONE")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("rclone"));
-    match print_listing(&rclone, target) {
-        Ok(()) => ExitCode::SUCCESS,
+    match run(Cli::parse().command) {
+        Ok(code) => code,
         Err(e) => {
-            eprintln!("drivebridge ls: {e}");
+            eprintln!("drivebridge: {e:#}");
             ExitCode::FAILURE
         }
     }
 }
 
-fn print_listing(rclone: &Path, target: &str) -> drivebridge_rclone::Result<()> {
-    let rcd = Rcd::start(rclone, &[])?;
+fn run(command: Command) -> Result<ExitCode> {
+    match command {
+        Command::Setup(args) => setup::run(args)?,
+        Command::Sync(args) => return sync::run(args),
+        Command::Status => status::show()?,
+        Command::Pause => status::set_paused(true)?,
+        Command::Resume => status::set_paused(false)?,
+        Command::Restore(args) => restore::run(args)?,
+        Command::Ls { target } => ls(&target)?,
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+fn ls(target: &str) -> Result<()> {
+    let rcd = Rcd::start(&config::rclone(), &[])?;
     eprintln!("using rclone {}", rcd.client().version()?);
     for item in rcd.client().list(target)? {
         if item.is_dir {

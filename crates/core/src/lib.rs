@@ -11,7 +11,7 @@ pub use ignore::IgnoreRules;
 pub use planner::{plan, FileMeta, Snapshot};
 
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// A single step in a sync plan.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,6 +25,29 @@ pub enum SyncAction {
 }
 
 impl SyncAction {
+    pub fn path(&self) -> &Path {
+        match self {
+            SyncAction::Upload(p)
+            | SyncAction::Download(p)
+            | SyncAction::DeleteLocal(p)
+            | SyncAction::DeleteRemote(p)
+            | SyncAction::Conflict(p)
+            | SyncAction::Skip(p) => p,
+        }
+    }
+
+    /// A stable name for logs and the history table.
+    pub fn kind(&self) -> &'static str {
+        match self {
+            SyncAction::Upload(_) => "upload",
+            SyncAction::Download(_) => "download",
+            SyncAction::DeleteLocal(_) => "delete-local",
+            SyncAction::DeleteRemote(_) => "delete-remote",
+            SyncAction::Conflict(_) => "conflict",
+            SyncAction::Skip(_) => "skip",
+        }
+    }
+
     pub fn is_delete(&self) -> bool {
         matches!(
             self,

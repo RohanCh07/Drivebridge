@@ -49,7 +49,11 @@ impl Bisync {
             args.push(dir.clone().into());
         }
         if self.resync {
+            // On a first sync, a file that differs on both sides keeps the newer copy;
+            // the older local copy goes to backup_dir1.
             args.push("--resync".into());
+            args.push("--resync-mode".into());
+            args.push("newer".into());
         }
         if self.force {
             args.push("--force".into());
