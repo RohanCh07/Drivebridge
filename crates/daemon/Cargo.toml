@@ -1,0 +1,12 @@
+[package]
+name = "drivebridge-daemon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "drivebridged"
+path = "src/main.rs"
+
+[dependencies]
+drivebridge-core.workspace = true

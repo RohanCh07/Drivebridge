@@ -1,0 +1,14 @@
+[Unit]
+Description=Drivebridge Google Drive sync service
+Documentation=https://github.com/Rohan708/drivebridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/drivebridged
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
