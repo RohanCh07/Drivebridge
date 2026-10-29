@@ -144,7 +144,10 @@ fn same_file_edited_on_both_sides_keeps_both() {
     for side in [&world.local, &world.drive] {
         let found = contents(side);
         assert!(found.contains(&"edited on laptop".to_string()), "{found:?}");
-        assert!(found.contains(&"edited on Drive!!".to_string()), "{found:?}");
+        assert!(
+            found.contains(&"edited on Drive!!".to_string()),
+            "{found:?}"
+        );
     }
 }
 

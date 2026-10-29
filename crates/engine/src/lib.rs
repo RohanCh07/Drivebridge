@@ -108,6 +108,11 @@ pub fn sync(
         return Ok(Outcome::UpToDate);
     }
 
+    // bisync aborts on its own when every file on a side changed, even if that is one file.
+    // Our policy has already vetted this plan; keep bisync's check only for big plans.
+    let changes = actions.iter().filter(|a| !matches!(a, SyncAction::Skip(_)));
+    let small_plan = changes.count() <= config.policy.max_delete_count;
+
     let stamp = now.format(trash::STAMP_FORMAT).to_string();
     let run = Bisync {
         path1: config.local_root.clone(),
@@ -116,7 +121,7 @@ pub fn sync(
         backup_dir1: Some(config.trash.join(stamp)),
         // bisync needs a resync when it has no listings of its own, even if we have a base.
         resync: base.is_empty() || !listed_before,
-        force: options.force,
+        force: options.force || small_plan,
         excludes: config.ignore.rclone_excludes(),
     };
     run.run(&config.rclone, &config.env)?;
