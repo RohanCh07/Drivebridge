@@ -17,3 +17,28 @@ drivebridge-engine.workspace = true
 drivebridge-store.workspace = true
 gtk.workspace = true
 zbus.workspace = true
+
+# One .deb with all three programs: `packaging/build-deb.sh`.
+[package.metadata.deb]
+name = "drivebridge"
+maintainer = "Rohan Chauhan <151774540+Rohan708@users.noreply.github.com>"
+copyright = "2026, Rohan Chauhan"
+license-file = ["../../LICENSE", "0"]
+extended-description = """\
+Two-way sync between a folder on your computer and a folder on Google Drive, \
+built around not losing data: every sync is planned and checked first, mass \
+deletes are blocked, conflicts keep both copies, and files a sync removes stay \
+in a local trash for 30 days. Includes the drivebridged background service, the \
+drivebridge command-line tool and the drivebridge-gui desktop app."""
+section = "net"
+priority = "optional"
+# Ubuntu 24.04's rclone is 1.60; install a current one from https://rclone.org/install/.
+depends = "$auto, rclone (>= 1.66)"
+assets = [
+    ["target/release/drivebridge-gui", "usr/bin/", "755"],
+    ["target/release/drivebridged", "usr/bin/", "755"],
+    ["target/release/drivebridge", "usr/bin/", "755"],
+    ["../../packaging/deb/drivebridged.service", "usr/lib/systemd/user/", "644"],
+    ["../../packaging/io.github.Drivebridge.App.desktop", "usr/share/applications/", "644"],
+    ["../../README.md", "usr/share/doc/drivebridge/README.md", "644"],
+]

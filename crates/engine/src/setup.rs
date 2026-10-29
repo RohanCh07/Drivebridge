@@ -2,6 +2,7 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 
 use anyhow::{ensure, Context, Result};
 use drivebridge_core::Snapshot;
@@ -59,4 +60,18 @@ pub fn connect(request: SetupRequest) -> Result<PathBuf> {
     // New folders mean a fresh start: the next sync is a first sync.
     store.replace_base(&Snapshot::new())?;
     Ok(local)
+}
+
+/// Starts the background service now and at every login (its systemd user unit). The error
+/// says why it couldn't, for example when the unit isn't installed.
+pub fn enable_service() -> std::result::Result<(), String> {
+    let status = Command::new("systemctl")
+        .args(["--user", "enable", "--now", "drivebridged.service"])
+        .status()
+        .map_err(|e| format!("could not run systemctl: {e}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("systemctl --user enable --now drivebridged.service failed ({status})"))
+    }
 }

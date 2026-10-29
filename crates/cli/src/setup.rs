@@ -40,5 +40,9 @@ pub fn run(args: SetupArgs) -> Result<()> {
     let local = setup::connect(request)?;
     println!("Connected. {} is ready to sync.", local.display());
     println!("Preview the first sync with `drivebridge sync --dry-run`.");
+    match setup::enable_service() {
+        Ok(()) => println!("The background service is running and will start at every login."),
+        Err(e) => println!("Start the background service yourself ({e})."),
+    }
     Ok(())
 }

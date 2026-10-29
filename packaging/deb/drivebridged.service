@@ -1,0 +1,16 @@
+[Unit]
+Description=Drivebridge Google Drive sync service
+Documentation=https://github.com/Rohan708/drivebridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/drivebridged
+Restart=on-failure
+RestartSec=30
+# Exit 78 means "not set up yet"; restarting won't help.
+RestartPreventExitStatus=78
+
+[Install]
+WantedBy=default.target

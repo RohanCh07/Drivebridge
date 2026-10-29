@@ -1,0 +1,23 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  deb:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install system libraries
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libdbus-1-dev libgtk-4-dev libadwaita-1-dev
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-deb
+        run: cargo install cargo-deb --locked
+      - name: Build the .deb
+        run: packaging/build-deb.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drivebridge-deb
+          path: target/debian/*.deb

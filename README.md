@@ -45,6 +45,18 @@ Safety rules:
 Google Docs, Sheets and Slides appear locally as `.desktop` links that open them in the browser.
 They are never uploaded back as copies.
 
+## Install the .deb
+
+Releases include a `.deb` with all three programs, the systemd user unit and the app launcher.
+It needs rclone 1.66 or newer, which Ubuntu's own package isn't, so install rclone first:
+
+```sh
+curl https://rclone.org/install.sh | sudo bash
+sudo apt install ./drivebridge_*.deb
+```
+
+To build it yourself: `cargo install cargo-deb --locked && packaging/build-deb.sh`.
+
 ## Desktop app
 
 `drivebridge-gui` walks you through setup on first run (your OAuth client file, the two folders,
