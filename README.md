@@ -1,6 +1,6 @@
 # Drivebridge
 
-[![CI](https://github.com/Rohan708/drivebridge/actions/workflows/ci.yml/badge.svg)](https://github.com/Rohan708/drivebridge/actions/workflows/ci.yml)
+[![CI](https://github.com/RohanCh07/drivebridge/actions/workflows/ci.yml/badge.svg)](https://github.com/RohanCh07/drivebridge/actions/workflows/ci.yml)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 
 **Two-way Google Drive sync for Linux that is built not to lose your files.**

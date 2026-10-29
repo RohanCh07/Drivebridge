@@ -21,7 +21,7 @@ zbus.workspace = true
 # One .deb with all three programs: `packaging/build-deb.sh`.
 [package.metadata.deb]
 name = "drivebridge"
-maintainer = "Rohan Chauhan <151774540+Rohan708@users.noreply.github.com>"
+maintainer = "Rohan Chauhan <151774540+RohanCh07@users.noreply.github.com>"
 copyright = "2026, Rohan Chauhan"
 license-file = ["../../LICENSE", "0"]
 extended-description = """\

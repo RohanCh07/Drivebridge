@@ -16,7 +16,7 @@ version = "0.0.1"
 edition = "2021"
 rust-version = "1.89"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/Rohan708/drivebridge"
+repository = "https://github.com/RohanCh07/drivebridge"
 
 [workspace.dependencies]
 drivebridge-core = { path = "crates/core" }
