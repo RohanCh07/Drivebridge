@@ -21,11 +21,13 @@ drivebridge-core = { path = "crates/core" }
 drivebridge-engine = { path = "crates/engine" }
 drivebridge-rclone = { path = "crates/rclone" }
 drivebridge-store = { path = "crates/store" }
+drivebridge-watcher = { path = "crates/watcher" }
 anyhow = "1"
 base64 = "0.22"
 chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
 getrandom = "0.2"
+notify = "6"
 keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }

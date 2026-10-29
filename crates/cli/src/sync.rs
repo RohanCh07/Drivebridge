@@ -2,15 +2,14 @@
 
 use std::process::ExitCode;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use chrono::{Local, Utc};
 use clap::Args;
-use drivebridge_core::{IgnoreRules, SafetyPolicy, SyncAction};
-use drivebridge_engine::{trash, Options, Outcome, SyncConfig};
+use drivebridge_core::SyncAction;
+use drivebridge_engine::{trash, Options, Outcome};
 use drivebridge_store::Store;
 
-use crate::config::{self, Paths, DRIVE_FOLDER, LAST_SYNC, LOCAL_ROOT, PAUSED, REMOTE};
-use crate::secrets;
+use crate::config::{self, Paths, LAST_SYNC};
 
 /// Exit code when the safety check stops a sync.
 const BLOCKED: u8 = 2;
@@ -28,29 +27,16 @@ pub struct SyncArgs {
 pub fn run(args: SyncArgs) -> Result<ExitCode> {
     let paths = Paths::new()?;
     let mut store = Store::open(&paths.db)?;
-    if store.setting(PAUSED)?.as_deref() == Some("true") {
+    if config::is_paused(&store)? {
         println!("Syncing is paused. Run `drivebridge resume` to continue.");
         return Ok(ExitCode::SUCCESS);
     }
-    let not_set_up = "not set up yet; run `drivebridge setup` first";
-    let local_root = store.setting(LOCAL_ROOT)?.context(not_set_up)?;
-    let folder = store.setting(DRIVE_FOLDER)?.context(not_set_up)?;
-
-    let config = SyncConfig {
-        rclone: config::rclone(),
-        env: secrets::load()?.env(REMOTE),
-        local_root,
-        remote_root: format!("{REMOTE}:{folder}"),
-        workdir: paths.bisync.clone(),
-        trash: paths.trash.clone(),
-        ignore: IgnoreRules::new(),
-        policy: SafetyPolicy::default(),
-    };
+    let sync_config = config::sync_config(&paths, &store)?;
     let options = Options {
         dry_run: args.dry_run,
         force: args.force,
     };
-    let outcome = drivebridge_engine::sync(&config, &mut store, options, Local::now())?;
+    let outcome = drivebridge_engine::sync(&sync_config, &mut store, options, Local::now())?;
     let code = report(&outcome);
 
     if matches!(outcome, Outcome::UpToDate | Outcome::Synced { .. }) {

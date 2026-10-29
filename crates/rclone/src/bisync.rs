@@ -47,6 +47,9 @@ impl Bisync {
             "--suffix-keep-extension".into(),
             "--resilient".into(),
             "--recover".into(),
+            // A lock left by a killed run expires instead of blocking every later run.
+            "--max-lock".into(),
+            "15m".into(),
             "--verbose".into(),
         ];
         if let Some(dir) = &self.backup_dir1 {

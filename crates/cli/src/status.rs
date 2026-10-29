@@ -4,7 +4,7 @@ use anyhow::Result;
 use chrono::{DateTime, Local};
 use drivebridge_store::Store;
 
-use crate::config::{Paths, DRIVE_FOLDER, LAST_SYNC, LOCAL_ROOT, PAUSED};
+use crate::config::{self, Paths, DRIVE_FOLDER, LAST_SYNC, LOCAL_ROOT, PAUSED};
 
 pub fn show() -> Result<()> {
     let paths = Paths::new()?;
@@ -14,7 +14,7 @@ pub fn show() -> Result<()> {
         println!("Not set up. Run `drivebridge setup --client-secret <FILE>`.");
         return Ok(());
     };
-    let paused = store.setting(PAUSED)?.as_deref() == Some("true");
+    let paused = config::is_paused(&store)?;
     let last_sync = store
         .setting(LAST_SYNC)?
         .and_then(|s| s.parse::<i64>().ok())

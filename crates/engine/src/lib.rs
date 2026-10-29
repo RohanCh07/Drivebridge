@@ -1,6 +1,8 @@
 //! One sync run, shared by the CLI and the daemon: list both sides, plan, check the safety
 //! rules, let rclone bisync carry out the plan, and remember the result.
 
+pub mod secrets;
+pub mod settings;
 pub mod trash;
 
 use std::fs;

@@ -41,6 +41,21 @@ Safety rules:
 - Local files that a sync deletes or overwrites go to a trash folder for 30 days
   (`drivebridge restore`). Files deleted on Drive go to Drive's own trash.
 
+## Run it in the background
+
+`drivebridged` syncs at startup, a few seconds after local changes settle, and every five
+minutes to pick up changes made on Drive. It honours `drivebridge pause`.
+
+```sh
+cargo install --path crates/daemon --root ~/.local
+mkdir -p ~/.config/systemd/user
+cp packaging/drivebridged.service ~/.config/systemd/user/
+systemctl --user enable --now drivebridged
+journalctl --user -u drivebridged -f    # watch what it does
+```
+
+Restart it after running `drivebridge setup` again.
+
 ## Try the rclone spike
 
 Set up a Drive remote once with `rclone config` (call it `gdrive`), then:
