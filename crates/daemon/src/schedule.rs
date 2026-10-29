@@ -66,6 +66,11 @@ impl Scheduler {
         }
     }
 
+    /// Someone asked for a sync (the desktop app, or resume after a pause).
+    pub fn sync_now(&mut self, now: Instant) {
+        self.next_poll = now;
+    }
+
     pub fn due(&self, now: Instant) -> bool {
         now >= self.next_wake()
     }
@@ -136,6 +141,14 @@ mod tests {
         }
         assert!(!s.due(t0 + secs(30)));
         assert!(s.due(t0 + secs(31)));
+    }
+
+    #[test]
+    fn sync_now_is_due_immediately() {
+        let t0 = Instant::now();
+        let mut s = synced_at(t0);
+        s.sync_now(t0 + secs(5));
+        assert!(s.due(t0 + secs(5)));
     }
 
     #[test]
