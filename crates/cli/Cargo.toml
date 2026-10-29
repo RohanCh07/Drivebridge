@@ -10,3 +10,4 @@ path = "src/main.rs"
 
 [dependencies]
 clap.workspace = true
+drivebridge-rclone.workspace = true

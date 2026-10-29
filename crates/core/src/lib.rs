@@ -1,4 +1,14 @@
 //! Core sync types and safety rules for Drivebridge.
+//!
+//! Everything here is pure logic with no I/O, so every safety decision can be unit tested.
+
+pub mod conflict;
+pub mod ignore;
+pub mod planner;
+
+pub use conflict::conflict_name;
+pub use ignore::IgnoreRules;
+pub use planner::{plan, FileMeta, Snapshot};
 
 use std::fmt;
 use std::path::PathBuf;
