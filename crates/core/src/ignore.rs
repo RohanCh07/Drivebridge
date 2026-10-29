@@ -1,6 +1,6 @@
 //! Paths that are never synced.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const IGNORED_NAMES: &[&str] = &[".git", "node_modules", "__pycache__", ".DS_Store"];
 const TEMP_SUFFIXES: &[&str] = &["~", ".swp", ".swx", ".tmp", ".part", ".crdownload"];
@@ -10,6 +10,7 @@ const TEMP_PREFIXES: &[&str] = &[".~lock.", ".goutputstream-", "~$"];
 #[derive(Debug, Clone, Default)]
 pub struct IgnoreRules {
     names: Vec<String>,
+    paths: Vec<PathBuf>,
 }
 
 impl IgnoreRules {
@@ -23,8 +24,17 @@ impl IgnoreRules {
         self
     }
 
+    /// Also ignores these exact paths, relative to the sync folder.
+    pub fn with_paths(mut self, paths: impl IntoIterator<Item = PathBuf>) -> Self {
+        self.paths.extend(paths);
+        self
+    }
+
     /// True if any component of `path` matches a rule, so ignoring a folder ignores its contents.
     pub fn is_ignored(&self, path: &Path) -> bool {
+        if self.paths.iter().any(|p| p == path) {
+            return true;
+        }
         path.components().any(|c| {
             let name: &str = &c.as_os_str().to_string_lossy();
             IGNORED_NAMES.contains(&name)
@@ -44,8 +54,22 @@ impl IgnoreRules {
         }
         patterns.extend(TEMP_SUFFIXES.iter().map(|s| format!("*{s}")));
         patterns.extend(TEMP_PREFIXES.iter().map(|p| format!("{p}*")));
+        let exact = self.paths.iter().map(|p| escape_glob(&p.to_string_lossy()));
+        patterns.extend(exact.map(|p| format!("/{p}")));
         patterns
     }
+}
+
+/// Escapes the characters rclone filter globs treat specially.
+fn escape_glob(text: &str) -> String {
+    let mut escaped = String::with_capacity(text.len());
+    for c in text.chars() {
+        if matches!(c, '*' | '?' | '[' | ']' | '{' | '}' | '\\') {
+            escaped.push('\\');
+        }
+        escaped.push(c);
+    }
+    escaped
 }
 
 #[cfg(test)]
@@ -89,6 +113,15 @@ mod tests {
         ] {
             assert!(patterns.iter().any(|p| p == expected), "{expected}");
         }
+    }
+
+    #[test]
+    fn exact_paths_are_ignored_and_escaped_for_rclone() {
+        let rules = IgnoreRules::new().with_paths([PathBuf::from("Docs/Plan [v2].desktop")]);
+        assert!(rules.is_ignored(Path::new("Docs/Plan [v2].desktop")));
+        assert!(!rules.is_ignored(Path::new("Plan [v2].desktop")));
+        let patterns = rules.rclone_excludes();
+        assert!(patterns.iter().any(|p| p == r"/Docs/Plan \[v2\].desktop"));
     }
 
     #[test]

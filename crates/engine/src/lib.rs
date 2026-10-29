@@ -1,6 +1,7 @@
 //! One sync run, shared by the CLI and the daemon: list both sides, plan, check the safety
 //! rules, let rclone bisync carry out the plan, and remember the result.
 
+pub mod gdocs;
 pub mod lock;
 pub mod secrets;
 pub mod settings;
@@ -33,6 +34,8 @@ pub enum Error {
     Store(#[from] drivebridge_store::Error),
     #[error("could not use the sync lock")]
     Lock(#[source] io::Error),
+    #[error("could not update the links to Google Docs")]
+    Links(#[source] io::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -97,9 +100,12 @@ pub fn sync(
         return Ok(Outcome::Busy);
     };
     let rcd = Rcd::start(&config.rclone, &config.env)?;
+    // Our links to Google Docs live only locally; they never upload.
+    let links = gdocs::tracked(store)?.into_keys();
+    let ignore = config.ignore.clone().with_paths(links);
     let (local, remote) = list_both(rcd.client(), config)?;
     let base = store.base()?;
-    let actions = plan(&local, &remote, &base, &config.ignore);
+    let actions = plan(&local, &remote, &base, &ignore);
     let violation = config.policy.check_plan(&actions, base.len()).err();
 
     if options.dry_run {
@@ -118,6 +124,7 @@ pub fn sync(
     let listed_before = has_listings(&config.workdir);
     if !has_work && (listed_before || (local.is_empty() && remote.is_empty())) {
         store.replace_base(&agreed(&local, &remote))?;
+        gdocs::refresh(rcd.client(), store, &config.remote_root, &config.local_root)?;
         return Ok(Outcome::UpToDate);
     }
 
@@ -135,7 +142,7 @@ pub fn sync(
         // bisync needs a resync when it has no listings of its own, even if we have a base.
         resync: base.is_empty() || !listed_before,
         force: options.force || small_plan,
-        excludes: config.ignore.rclone_excludes(),
+        excludes: ignore.rclone_excludes(),
     };
     // We hold the sync lock, so any bisync lock left here is from a run that was killed.
     remove_stale_bisync_locks(&config.workdir).map_err(Error::Lock)?;
@@ -144,6 +151,7 @@ pub fn sync(
     let (local, remote) = list_both(rcd.client(), config)?;
     store.replace_base(&agreed(&local, &remote))?;
     store.record(now.timestamp(), &actions)?;
+    gdocs::refresh(rcd.client(), store, &config.remote_root, &config.local_root)?;
     Ok(Outcome::Synced {
         actions,
         overridden: violation,

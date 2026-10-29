@@ -131,6 +131,34 @@ impl RcClient {
         parse_list(self.call("operations/list", params)?)
     }
 
+    /// Like [`list_recursive`](Self::list_recursive), with MIME types filled in.
+    pub fn list_recursive_typed(&self, fs: &str) -> Result<Vec<ListItem>> {
+        let params = json!({
+            "fs": fs,
+            "remote": "",
+            "opt": { "recurse": true, "filesOnly": true },
+        });
+        parse_list(self.call("operations/list", params)?)
+    }
+
+    /// Copies one file, e.g. from Drive to the local folder.
+    pub fn copy_file(
+        &self,
+        src_fs: &str,
+        src_remote: &str,
+        dst_fs: &str,
+        dst_remote: &str,
+    ) -> Result<()> {
+        let params = json!({
+            "srcFs": src_fs,
+            "srcRemote": src_remote,
+            "dstFs": dst_fs,
+            "dstRemote": dst_remote,
+        });
+        self.call("operations/copyfile", params)?;
+        Ok(())
+    }
+
     /// Creates folder `remote` inside `fs`, including parents. Succeeds if it already exists.
     pub fn mkdir(&self, fs: &str, remote: &str) -> Result<()> {
         self.call("operations/mkdir", json!({ "fs": fs, "remote": remote }))?;

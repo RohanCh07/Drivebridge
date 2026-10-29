@@ -41,6 +41,9 @@ Safety rules:
 - Local files that a sync deletes or overwrites go to a trash folder for 30 days
   (`drivebridge restore`). Files deleted on Drive go to Drive's own trash.
 
+Google Docs, Sheets and Slides appear locally as `.desktop` links that open them in the browser.
+They are never uploaded back as copies.
+
 ## Run it in the background
 
 `drivebridged` syncs at startup, a few seconds after local changes settle, and every five
