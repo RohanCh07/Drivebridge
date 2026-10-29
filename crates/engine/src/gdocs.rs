@@ -29,7 +29,9 @@ pub fn view(remote_root: &str) -> Option<String> {
     if remote.is_empty() || remote.contains('/') {
         return None;
     }
-    Some(format!("{remote},skip_gdocs=false,export_formats=desktop:{path}"))
+    Some(format!(
+        "{remote},skip_gdocs=false,export_formats=desktop:{path}"
+    ))
 }
 
 /// The links we created, as recorded in the store.
