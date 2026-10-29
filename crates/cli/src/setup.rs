@@ -34,8 +34,8 @@ pub fn run(args: SetupArgs) -> Result<()> {
     );
 
     let path = &args.client_secret;
-    let json = fs::read_to_string(path)
-        .with_context(|| format!("could not read {}", path.display()))?;
+    let json =
+        fs::read_to_string(path).with_context(|| format!("could not read {}", path.display()))?;
     let (client_id, client_secret) = drive::parse_client_secret_file(&json)
         .context("that file isn't a Google OAuth client (expected a Desktop app client)")?;
 
@@ -43,8 +43,7 @@ pub fn run(args: SetupArgs) -> Result<()> {
         Some(dir) => dir,
         None => config::home()?.join("GoogleDrive"),
     };
-    fs::create_dir_all(&local)
-        .with_context(|| format!("could not create {}", local.display()))?;
+    fs::create_dir_all(&local).with_context(|| format!("could not create {}", local.display()))?;
     let local = local.canonicalize()?;
 
     let rclone = config::rclone();
@@ -71,7 +70,10 @@ pub fn run(args: SetupArgs) -> Result<()> {
     // New folders mean a fresh start: the next sync is a first sync.
     store.replace_base(&Snapshot::new())?;
 
-    println!("Connected. {} will sync with Drive folder \"{folder}\".", local.display());
+    println!(
+        "Connected. {} will sync with Drive folder \"{folder}\".",
+        local.display()
+    );
     println!("Preview the first sync with `drivebridge sync --dry-run`.");
     Ok(())
 }

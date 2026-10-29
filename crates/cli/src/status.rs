@@ -22,7 +22,10 @@ pub fn show() -> Result<()> {
 
     println!("Local folder:  {local}");
     println!("Drive folder:  {folder}");
-    println!("State:         {}", if paused { "paused" } else { "active" });
+    println!(
+        "State:         {}",
+        if paused { "paused" } else { "active" }
+    );
     println!("Last sync:     {last_sync}");
     println!("Tracked files: {}", store.base()?.len());
 
@@ -41,7 +44,14 @@ pub fn set_paused(paused: bool) -> Result<()> {
     let paths = Paths::new()?;
     let store = Store::open(&paths.db)?;
     store.set_setting(PAUSED, if paused { "true" } else { "false" })?;
-    println!("{}", if paused { "Syncing paused." } else { "Syncing resumed." });
+    println!(
+        "{}",
+        if paused {
+            "Syncing paused."
+        } else {
+            "Syncing resumed."
+        }
+    );
     Ok(())
 }
 

@@ -89,9 +89,19 @@ pub fn run(args: SyncArgs) -> Result<ExitCode> {
 
     let removed = trash::prune(&paths.trash, Local::now().naive_local(), config::TRASH_DAYS)?;
     if removed > 0 {
-        println!("Emptied {removed} trash folder(s) older than {} days.", config::TRASH_DAYS);
+        println!(
+            "Emptied {removed} trash folder(s) older than {} days.",
+            config::TRASH_DAYS
+        );
     }
-    println!("{}", if has_work { "Sync complete." } else { "Everything is up to date." });
+    println!(
+        "{}",
+        if has_work {
+            "Sync complete."
+        } else {
+            "Everything is up to date."
+        }
+    );
     Ok(ExitCode::SUCCESS)
 }
 
@@ -136,7 +146,13 @@ fn agreed(local: &Snapshot, remote: &Snapshot) -> Snapshot {
 }
 
 fn summarize(actions: &[SyncAction]) -> String {
-    let kinds = ["upload", "download", "delete-local", "delete-remote", "conflict"];
+    let kinds = [
+        "upload",
+        "download",
+        "delete-local",
+        "delete-remote",
+        "conflict",
+    ];
     let parts: Vec<String> = kinds
         .iter()
         .map(|kind| (kind, actions.iter().filter(|a| a.kind() == *kind).count()))
@@ -182,7 +198,12 @@ mod tests {
 
     #[test]
     fn local_and_drive_timestamps_compare_equal() {
-        let local = snapshot(vec![item("a", 1, "2026-10-20T14:45:00.123456789+05:30", false)]);
+        let local = snapshot(vec![item(
+            "a",
+            1,
+            "2026-10-20T14:45:00.123456789+05:30",
+            false,
+        )]);
         let drive = snapshot(vec![item("a", 1, "2026-10-20T09:15:00.123Z", false)]);
         assert_eq!(agreed(&local, &drive).len(), 1);
     }
@@ -197,7 +218,10 @@ mod tests {
         let local = Snapshot::from([("same".into(), meta(1)), ("diff".into(), meta(1))]);
         let remote = Snapshot::from([("same".into(), meta(1)), ("diff".into(), meta(2))]);
         let base = agreed(&local, &remote);
-        assert_eq!(base.keys().collect::<Vec<_>>(), vec![&PathBuf::from("same")]);
+        assert_eq!(
+            base.keys().collect::<Vec<_>>(),
+            vec![&PathBuf::from("same")]
+        );
     }
 
     #[test]

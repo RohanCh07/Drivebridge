@@ -80,7 +80,13 @@ mod tests {
     #[test]
     fn rclone_patterns_cover_folders_and_temp_files() {
         let patterns = IgnoreRules::new().with_name("build").rclone_excludes();
-        for expected in [".git/**", "node_modules/**", "build/**", "*.swp", ".~lock.*"] {
+        for expected in [
+            ".git/**",
+            "node_modules/**",
+            "build/**",
+            "*.swp",
+            ".~lock.*",
+        ] {
             assert!(patterns.iter().any(|p| p == expected), "{expected}");
         }
     }

@@ -74,7 +74,9 @@ impl Store {
 
     /// The files both sides agreed on after the last sync.
     pub fn base(&self) -> Result<Snapshot> {
-        let mut stmt = self.conn.prepare("SELECT path, size, mtime, hash FROM files")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT path, size, mtime, hash FROM files")?;
         let rows = stmt.query_map([], |r| {
             let path: String = r.get(0)?;
             let size: i64 = r.get(1)?;
@@ -154,7 +156,9 @@ mod tests {
         let store = Store::open_in_memory().unwrap();
         assert_eq!(store.setting("local_root").unwrap(), None);
         store.set_setting("local_root", "/home/me/Drive").unwrap();
-        store.set_setting("local_root", "/home/me/GoogleDrive").unwrap();
+        store
+            .set_setting("local_root", "/home/me/GoogleDrive")
+            .unwrap();
         let value = store.setting("local_root").unwrap();
         assert_eq!(value.as_deref(), Some("/home/me/GoogleDrive"));
     }
@@ -182,7 +186,9 @@ mod tests {
             SyncAction::Skip("b.txt".into()),
         ];
         store.record(100, &first).unwrap();
-        store.record(200, &[SyncAction::DeleteLocal("c.txt".into())]).unwrap();
+        store
+            .record(200, &[SyncAction::DeleteLocal("c.txt".into())])
+            .unwrap();
 
         let history = store.recent_history(10).unwrap();
         let summary: Vec<_> = history
