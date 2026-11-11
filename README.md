@@ -11,7 +11,8 @@ work is done by [rclone](https://rclone.org), and Drivebridge adds the part that
 safe to do.
 
 **Status:** pre-alpha. Every safety rule below is covered by tests against a stand-in Drive;
-testing against real Google accounts is next.
+testing against real Google accounts is next. What's built and what's open:
+[docs/status.md](docs/status.md).
 
 ## Why
 
@@ -156,6 +157,9 @@ Drive, in `crates/engine/tests/scenarios.rs`; the planner's rules also have fast
 `crates/core`.
 
 ## Development
+
+The first `cargo build` creates `Cargo.lock`. Commit it: this project ships programs, so builds
+(including the Flatpak) must use the same dependency versions.
 
 ```sh
 cargo build

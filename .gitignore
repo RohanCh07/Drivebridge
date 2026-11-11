@@ -1,4 +1,11 @@
-target/
+# Build output
+/target/
+*.deb
+packaging/flatpak/build/
+.flatpak-builder/
+
+# Local state and secrets: never commit these
 *.db
 client_secret*.json
+*token*.json
 .env
